@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Sybil's 15th • Casino Photobooth</title>
+<style>
+  :root{
+    --gold:#d4af37;
+    --gold2:#ffe69a;
+    --red:#6f0010;
+    --red2:#a40d22;
+    --black:#050505;
+    --cream:#fff5cf;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:#050505;color:var(--cream)}
+  body{
+    font-family:Georgia,serif;
+    display:flex;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 50% 0%, #3d000b 0%, #090909 38%, #020202 100%);
+  }
+
+  .app{
+    width:min(100%, 760px);
+    padding:18px 14px 34px;
+    text-align:center;
+  }
+
+  .topline{
+    color:var(--gold);
+    font-size:12px;
+    letter-spacing:3px;
+    margin:4px 0 7px;
+  }
+
+  h1{
+    margin:0;
+    color:var(--gold2);
+    font-family:Georgia,serif;
+    font-size:clamp(34px,8vw,58px);
+    letter-spacing:3px;
+    line-height:1;
+    text-shadow:0 2px 12px #000;
+  }
+
+  h1 em{
+    display:block;
+    color:#fff0ad;
+    font-size:.55em;
+    letter-spacing:7px;
+    margin-top:8px;
+    font-style:normal;
+  }
+
+  .tagline{
+    margin:10px 0 16px;
+    color:#d7c48b;
+    font-size:13px;
+    letter-spacing:2px;
+  }
+
+  .camera-card{
+    position:relative;
+    width:min(100%,620px);
+    margin:0 auto;
+    aspect-ratio:4/5;
+    overflow:hidden;
+    background:#000;
+    border:2px solid var(--gold);
+    border-radius:16px;
+    box-shadow:0 0 0 5px rgba(212,175,55,.08), 0 20px 50px rgba(0,0,0,.75);
+  }
+
+  video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    transform:scaleX(-1);
+    background:#000;
+  }
+
+  .camera-frame{
+    position:absolute;
+    inset:10px;
+    border:1px solid rgba(255,230,154,.75);
+    pointer-events:none;
+  }
+
+  .corner{
+    position:absolute;
+    color:var(--gold2);
+    font-size:27px;
+    line-height:1;
+    text-shadow:0 2px 7px #000;
+  }
+  .tl{top:18px;left:18px}.tr{top:18px;right:18px}
+  .bl{bottom:18px;left:18px}.br{bottom:18px;right:18px}
+
+  .countdown{
+    position:absolute;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,.32);
+    z-index:5;
+  }
+
+  .count-number{
+    width:150px;
+    height:150px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:4px solid var(--gold2);
+    border-radius:50%;
+    color:white;
+    font-size:88px;
+    font-weight:bold;
+    background:rgba(70,0,10,.75);
+    box-shadow:0 0 35px rgba(212,175,55,.45);
+    text-shadow:0 0 15px #000;
+  }
+
+  .flash{
+    position:absolute;
+    inset:0;
+    background:white;
+    opacity:0;
+    pointer-events:none;
+    z-index:10;
+  }
+
+  .flash.go{animation:flash .28s ease-out}
+  @keyframes flash{0%{opacity:.9}100%{opacity:0}}
+
+  .status{
+    min-height:22px;
+    margin:12px auto 9px;
+    color:#e9d99d;
+    font-size:14px;
+  }
+
+  .progress{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin:0 auto 14px;
+  }
+
+  .dot{
+    width:9px;height:9px;border-radius:50%;
+    border:1px solid var(--gold);
+    background:transparent;
+  }
+  .dot.done{background:var(--gold)}
+  .dot.active{background:var(--gold2);box-shadow:0 0 12px var(--gold)}
+
+  button{
+    appearance:none;
+    border:1px solid var(--gold2);
+    border-radius:999px;
+    padding:14px 22px;
+    font-family:Georgia,serif;
+    font-size:14px;
+    font-weight:bold;
+    letter-spacing:1px;
+    cursor:pointer;
+    color:#090909;
+    background:linear-gradient(#ffe58a,#d4af37 55%,#9b6c18);
+    box-shadow:0 7px 18px rgba(0,0,0,.5);
+  }
+
+  button:disabled{opacity:.45;cursor:not-allowed}
+
+  .secondary{
+    color:var(--gold2);
+    background:#100b0b;
+    border-color:var(--gold);
+  }
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:10px;
+  }
+
+  .preview{
+    display:none;
+    width:min(100%,620px);
+    margin:24px auto 0;
+  }
+
+  .preview.show{display:block}
+
+  .strip-wrap{
+    padding:10px;
+    background:#080808;
+    border:1px solid var(--gold);
+    border-radius:12px;
+  }
+
+  canvas{
+    width:100%;
+    height:auto;
+    display:block;
+    background:#000;
+  }
+
+  .preview h2{
+    color:var(--gold2);
+    font-size:18px;
+    letter-spacing:2px;
+    margin:0 0 12px;
+  }
+
+  .hint{
+    color:#b9ad84;
+    font-size:12px;
+    margin-top:9px;
+    line-height:1.45;
+  }
+
+  .hidden{display:none!important}
+</style>
+</head>
+
+<body>
+<main class="app">
+  <div class="topline">♠ ♦ ♥ ♣ &nbsp; CASINO NIGHT &nbsp; ♣ ♥ ♦ ♠</div>
+  <h1>SYBIL'S <span>15TH</span><em>PHOTOBOOTH</em></h1>
+  <div class="tagline">STRIKE A POSE • TAKE YOUR LUCK • MAKE A MEMORY</div>
+
+  <section class="camera-card" aria-label="Camera preview">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="camera-frame"></div>
+    <div class="corner tl">♠</div>
+    <div class="corner tr">♦</div>
+    <div class="corner bl">♣</div>
+    <div class="corner br">♥</div>
+
+    <div class="countdown" id="countdown">
+      <div class="count-number" id="countNumber">3</div>
+    </div>
+    <div class="flash" id="flash"></div>
+  </section>
+
+  <div class="status" id="status">Tap START to turn on the camera.</div>
+
+  <div class="progress" aria-label="Photo progress">
+    <div class="dot" id="dot1"></div>
+    <div class="dot" id="dot2"></div>
+    <div class="dot" id="dot3"></div>
+  </div>
+
+  <div class="controls">
+    <button id="startBtn">♠ START • 3 PHOTOS</button>
+    <button id="retakeBtn" class="secondary hidden">↻ RETAKE</button>
+  </div>
+
+  <section class="preview" id="preview">
+    <h2>YOUR LUCKY STRIP</h2>
+    <div class="strip-wrap">
+      <canvas id="canvas" width="900" height="2100"></canvas>
+    </div>
+
+    <div class="controls" style="margin-top:14px">
+      <button id="saveBtn">💾 SAVE TO PHONE / COMPUTER</button>
+      <button id="shareBtn" class="secondary">✨ SHARE</button>
+    </div>
+
+    <div class="hint">
+      On a phone, “Share” can open the phone's share sheet where you can choose
+      <b>Save Image / Save to Photos</b> when your browser provides that option.
+      On a computer, Save downloads the PNG.
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  const video = document.getElementById("video");
+  const startBtn = document.getElementById("startBtn");
+  const retakeBtn = document.getElementById("retakeBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const shareBtn = document.getElementById("shareBtn");
+  const status = document.getElementById("status");
+  const countdown = document.getElementById("countdown");
+  const countNumber = document.getElementById("countNumber");
+  const flash = document.getElementById("flash");
+  const preview = document.getElementById("preview");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const dots = [
+    document.getElementById("dot1"),
+    document.getElementById("dot2"),
+    document.getElementById("dot3")
+  ];
+
+  let stream = null;
+  let photos = [];
+  let busy = false;
+
+  function setProgress(index) {
+    dots.forEach((dot, i) => {
+      dot.classList.toggle("done", i < index);
+      dot.classList.toggle("active", i === index);
+    });
+  }
+
+  function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  async function startCamera() {
+    if (stream) return true;
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      status.textContent = "Camera access is unavailable in this browser.";
+      return false;
+    }
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "user" },
+          width: { ideal: 1280 },
+          height: { ideal: 1280 }
+        },
+        audio: false
+      });
+
+      video.srcObject = stream;
+
+      await new Promise(resolve => {
+        if (video.readyState >= 2) resolve();
+        else video.addEventListener("loadeddata", resolve, { once:true });
+      });
+
+      await video.play();
+      status.textContent = "Camera ready. Get everyone in frame!";
+      return true;
+    } catch (error) {
+      console.error(error);
+      stream = null;
+      status.textContent = "Camera permission was blocked. Allow camera access and try again.";
+      return false;
+    }
+  }
+
+  async function doCountdown(photoNumber) {
+    countdown.style.display = "flex";
+
+    for (let n = 3; n >= 1; n--) {
+      countNumber.textContent = n;
+      status.textContent = "Photo " + photoNumber + " of 3 — " + n + "…";
+      await wait(1000);
+    }
+
+    countdown.style.display = "none";
+  }
+
+  function capturePhoto() {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+
+    if (!w || !h) throw new Error("Camera frame is not ready.");
+
+    const targetRatio = 4 / 3;
+    const sourceRatio = w / h;
+
+    let sx = 0, sy = 0, sw = w, sh = h;
+
+    if (sourceRatio > targetRatio) {
+      sw = h * targetRatio;
+      sx = (w - sw) / 2;
+    } else {
+      sh = w / targetRatio;
+      sy = (h - sh) / 2;
+    }
+
+    const shot = document.createElement("canvas");
+    shot.width = 900;
+    shot.height = 675;
+
+    const sctx = shot.getContext("2d");
+
+    // Mirror the captured image so it matches the preview.
+    sctx.save();
+    sctx.translate(900, 0);
+    sctx.scale(-1, 1);
+    sctx.drawImage(video, sx, sy, sw, sh, 0, 0, 900, 675);
+    sctx.restore();
+
+    flash.classList.remove("go");
+    void flash.offsetWidth;
+    flash.classList.add("go");
+
+    return shot;
+  }
+
+  function roundedRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawStrip() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Velvet-like background
+    const bg = ctx.createRadialGradient(W/2, 450, 50, W/2, 1100, 1200);
+    bg.addColorStop(0, "#4d0010");
+    bg.addColorStop(.45, "#180006");
+    bg.addColorStop(1, "#030303");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Gold outer frame
+    ctx.strokeStyle = "#d4af37";
+    ctx.lineWidth = 12;
+    ctx.strokeRect(24, 24, W-48, H-48);
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#80601f";
+    ctx.strokeRect(42, 42, W-84, H-84);
+
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#f5df87";
+    ctx.font = "26px Georgia";
+    ctx.fillText("♠  ♦  ♥  ♣   CASINO NIGHT   ♣  ♥  ♦  ♠", W/2, 92);
+
+    ctx.fillStyle = "#fff0ad";
+    ctx.font = "bold 72px Georgia";
+    ctx.fillText("SYBIL'S", W/2, 168);
+
+    ctx.font = "italic bold 100px Georgia";
+    ctx.fillText("15TH", W/2, 270);
+
+    ctx.strokeStyle = "#d4af37";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(100, 305);
+    ctx.lineTo(W-100, 305);
+    ctx.stroke();
+
+    const photoX = 75;
+    const photoW = W - 150;
+    const photoH = 675;
+    const startY = 340;
+    const gap = 38;
+
+    photos.forEach((photo, i) => {
+      const y = startY + i * (photoH + gap);
+
+      ctx.fillStyle = "#000";
+      roundedRect(photoX-10, y-10, photoW+20, photoH+20, 10);
+      ctx.fill();
+
+      ctx.strokeStyle = "#d4af37";
+      ctx.lineWidth = 5;
+      roundedRect(photoX-6, y-6, photoW+12, photoH+12, 8);
+      ctx.stroke();
+
+      ctx.drawImage(photo, photoX, y, photoW, photoH);
+
+      ctx.fillStyle = "#fff0ad";
+      ctx.font = "28px Georgia";
+      ctx.textAlign = "left";
+      ctx.fillText(i === 0 ? "♠" : i === 1 ? "♦" : "♣", photoX+14, y+36);
+
+      ctx.textAlign = "right";
+      ctx.fillText("♥", photoX+photoW-14, y+photoH-15);
+    });
+
+    // Footer
+    const footerY = 2460;
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "rgba(0,0,0,.45)";
+    ctx.fillRect(60, footerY, W-120, 190);
+
+    ctx.strokeStyle = "#8b681f";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(60, footerY, W-120, 190);
+
+    ctx.fillStyle = "#d4af37";
+    ctx.font = "25px Georgia";
+    ctx.fillText("♦  A LUCKY MEMORY  ♦", W/2, footerY+50);
+
+    ctx.fillStyle = "#ffe9a0";
+    ctx.font = "italic 25px Georgia";
+    ctx.fillText("One night. Three shots. One unforgettable 15th.", W/2, footerY+105);
+
+    ctx.fillStyle = "#a88a3c";
+    ctx.font = "19px Georgia";
+    ctx.fillText("♠   ♥   ♦   ♣", W/2, footerY+150);
+
+    ctx.fillStyle = "#80601f";
+    ctx.font = "14px Arial";
+    ctx.fillText("CASINO NIGHT • 15 • LUCKY MEMORIES", W/2, 2720);
+  }
+
+  async function takeThreePhotos() {
+    if (busy) return;
+    busy = true;
+    startBtn.disabled = true;
+    retakeBtn.classList.add("hidden");
+    preview.classList.remove("show");
+    photos = [];
+    setProgress(0);
+
+    const cameraOK = await startCamera();
+    if (!cameraOK) {
+      startBtn.disabled = false;
+      busy = false;
+      return;
+    }
+
+    // Give the camera a moment to stabilize.
+    await wait(500);
+
+    try {
+      for (let i = 0; i < 3; i++) {
+        setProgress(i);
+        await doCountdown(i + 1);
+        photos.push(capturePhoto());
+        setProgress(i + 1);
+        await wait(700);
+      }
+
+      drawStrip();
+      preview.classList.add("show");
+      retakeBtn.classList.remove("hidden");
+      status.textContent = "✨ Done! Your lucky strip is ready.";
+      preview.scrollIntoView({ behavior:"smooth", block:"start" });
+    } catch (error) {
+      console.error(error);
+      status.textContent = "Something went wrong while taking the photos. Please try again.";
+    } finally {
+      startBtn.disabled = false;
+      busy = false;
+    }
+  }
+
+  function downloadStrip() {
+    const link = document.createElement("a");
+    link.download = "sybils-15th-casino-photostrip.png";
+    link.href = canvas.toDataURL("image/png");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    status.textContent = "💾 Photo strip saved/downloaded.";
+  }
+
+  async function shareStrip() {
+    canvas.toBlob(async blob => {
+      if (!blob) return;
+
+      const file = new File(
+        [blob],
+        "sybils-15th-casino-photostrip.png",
+        { type:"image/png" }
+      );
+
+      try {
+        if (navigator.canShare && navigator.canShare({ files:[file] }) &&
+            navigator.share) {
+          await navigator.share({
+            files:[file],
+            title:"Sybil's 15th",
+            text:"Sybil's 15th Casino Night 🎰"
+          });
+          status.textContent = "✨ Shared!";
+        } else {
+          downloadStrip();
+        }
+      } catch (error) {
+        // User closing the share sheet is not an error.
+        if (error && error.name !== "AbortError") {
+          downloadStrip();
+        }
+      }
+    }, "image/png");
+  }
+
+  startBtn.addEventListener("click", takeThreePhotos);
+
+  retakeBtn.addEventListener("click", () => {
+    preview.classList.remove("show");
+    photos = [];
+    setProgress(0);
+    status.textContent = "Ready for another round!";
+    window.scrollTo({top:0, behavior:"smooth"});
+  });
+
+  saveBtn.addEventListener("click", downloadStrip);
+  shareBtn.addEventListener("click", shareStrip);
+
+  // Start the camera only after the user taps the button.
+  // This avoids browsers silently rejecting an automatic permission request.
+})();
+</script>
+</body>
+</html>
